@@ -25,9 +25,11 @@ const cursor = new Vector2(0, 0)
 
 const speed = 0.15
 
+const d = Math.max(window.innerWidth, window.innerHeight) / 30
+
 const resolution = {
-	x: Math.max(Math.floor(window.innerWidth / 30), 50),
-	y: Math.max(Math.floor(window.innerWidth / 30), 50),
+	x: Math.max(Math.floor(d), 50),
+	y: Math.max(Math.floor(d), 50),
 }
 
 for (let i = 0; i < resolution.x; i++) {
