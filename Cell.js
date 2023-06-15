@@ -4,6 +4,7 @@ import {
 	Mesh,
 	MeshStandardMaterial,
 	MeshPhysicalMaterial,
+	Vector2,
 } from 'three'
 import scene from './Scene'
 import { gsap } from 'gsap'
@@ -35,7 +36,7 @@ export default class Cell extends Mesh {
 		this.resolution = resolution
 
 		this.setIndexPosition()
-		this.setAlive(Math.random() < 0.2)
+		this.setAlive(Math.random() < 0.15)
 
 		this.scale.multiplyScalar(this.isAlive ? 1 : 0.05)
 
@@ -70,9 +71,11 @@ export default class Cell extends Mesh {
 		// 	{ duration: this.speed, y: isAlive, x: isAlive, z: isAlive }
 		// )
 
+		let speed = isAlive ? this.speed * 0.5 : this.speed
+
 		gsap.killTweensOf(this.scale)
 		gsap.to(this.scale, {
-			duration: this.speed,
+			duration: speed,
 			y: value,
 			x: value,
 			z: value,
@@ -157,5 +160,23 @@ export default class Cell extends Mesh {
 			// right cell
 			this.neighborsIndexes.push(i + 1)
 		}
+	}
+
+	static getIndexFromCoords(x, y, resolution) {
+		x = Math.floor(x) + resolution.x / 2
+		y = Math.floor(y) + resolution.y / 2
+
+		let i = (x % resolution.x) + y * resolution.x
+
+		return i
+	}
+
+	static getCellFromCoords(
+		position = new Vector2(),
+		resolution = new Vector2()
+	) {
+		let i = Cell.getIndexFromCoords(...position, resolution)
+
+		return Cell.cells[i]
 	}
 }

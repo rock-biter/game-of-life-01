@@ -5,9 +5,13 @@ import {
 	BoxGeometry,
 	DirectionalLight,
 	Mesh,
+	MeshBasicMaterial,
 	MeshNormalMaterial,
 	PerspectiveCamera,
+	PlaneGeometry,
 	PointLight,
+	Raycaster,
+	Vector2,
 	WebGLRenderer,
 } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
@@ -17,11 +21,13 @@ import Cell from './Cell'
 // const material = new MeshNormalMaterial()
 // const mesh = new Mesh(geometry, material)
 
-const speed = 0.1
+const cursor = new Vector2(0, 0)
+
+const speed = 0.15
 
 const resolution = {
-	x: 80,
-	y: 50,
+	x: Math.max(Math.floor(window.innerWidth / 30), 50),
+	y: Math.max(Math.floor(window.innerWidth / 30), 50),
 }
 
 for (let i = 0; i < resolution.x; i++) {
@@ -31,7 +37,26 @@ for (let i = 0; i < resolution.x; i++) {
 }
 Cell.cells.forEach((c) => c.computeNeighborsIndexes())
 
-// scene.add(mesh)
+/**
+ * Plane for ray caster
+ */
+const planeGeometry = new PlaneGeometry(
+	resolution.x,
+	resolution.y,
+	resolution.x,
+	resolution.y
+)
+planeGeometry.rotateX(-Math.PI * 0.5)
+const mat = new MeshBasicMaterial({
+	coloe: 0xff0000,
+	wireframe: true,
+	opacity: 0,
+	transparent: true,
+})
+planeGeometry.translate(-0.5, 0, -0.5)
+const plane = new Mesh(planeGeometry, mat)
+
+scene.add(plane)
 
 /**
  * camera
@@ -56,6 +81,9 @@ document.body.appendChild(renderer.domElement)
  */
 const controls = new OrbitControls(camera, renderer.domElement)
 controls.enableDamping = true
+controls.enableRotate = false
+controls.enablePan = false
+controls.enableZoom = false
 
 onResize()
 
@@ -91,13 +119,33 @@ function onResize() {
 	renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 }
 
+const raycaster = new Raycaster()
+const coords = new Vector2()
+
 /**
  * Frame loop
  */
 function animate() {
 	requestAnimationFrame(animate)
 
-	controls.update()
+	camera.rotation.z += 0.0005
+
+	raycaster.setFromCamera(cursor, camera)
+
+	const intersects = raycaster.intersectObject(plane)
+
+	let point = intersects[0]?.point
+	if (point) {
+		coords.x = point.x
+		coords.y = point.z
+
+		const cell = Cell.getCellFromCoords(coords, resolution)
+		if (!cell.isAlive) {
+			cell.born()
+		}
+	}
+
+	// controls.update()
 	renderer.render(scene, camera)
 }
 
@@ -129,3 +177,10 @@ function step() {
 
 // window.addEventListener('click', step)
 setInterval(step, speed * 1000)
+
+function onMouseMove(event) {
+	cursor.x = 2 * (event.clientX / window.innerWidth) - 1
+	cursor.y = -2 * (event.clientY / window.innerHeight) + 1
+}
+
+window.addEventListener('mousemove', onMouseMove)
