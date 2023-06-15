@@ -1,5 +1,8 @@
 import { Scene as THREEScene } from 'three'
 
+/**
+ * Scene singleton class
+ */
 class Scene extends THREEScene {
 	el
 

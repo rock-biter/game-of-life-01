@@ -17,21 +17,22 @@ import {
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import Cell from './Cell'
 
-// const geometry = new BoxGeometry(1, 1, 1)
-// const material = new MeshNormalMaterial()
-// const mesh = new Mesh(geometry, material)
-
 const cursor = new Vector2(0, 0)
 
 const speed = 0.15
 
+/**
+ * Grid resolution
+ */
 const d = Math.max(window.innerWidth, window.innerHeight) / 30
-
 const resolution = {
 	x: Math.max(Math.floor(d), 50),
 	y: Math.max(Math.floor(d), 50),
 }
 
+/**
+ * Generate cells
+ */
 for (let i = 0; i < resolution.x; i++) {
 	for (let j = 0; j < resolution.y; j++) {
 		new Cell(resolution, 0.9, speed)
@@ -49,15 +50,14 @@ const planeGeometry = new PlaneGeometry(
 	resolution.y
 )
 planeGeometry.rotateX(-Math.PI * 0.5)
-const mat = new MeshBasicMaterial({
-	coloe: 0xff0000,
+const planeMaterial = new MeshBasicMaterial({
+	color: 0xff0000,
 	wireframe: true,
 	opacity: 0,
 	transparent: true,
 })
 planeGeometry.translate(-0.5, 0, -0.5)
-const plane = new Mesh(planeGeometry, mat)
-
+const plane = new Mesh(planeGeometry, planeMaterial)
 scene.add(plane)
 
 /**
@@ -92,18 +92,15 @@ onResize()
 /**
  * lights
  */
-const aLight = new AmbientLight(0xffffff, 0.2)
-// scene.add(aLight)
-
 const dLight = new DirectionalLight(0xffffff, 0.2)
 dLight.position.set(0, 10, 0)
 dLight.position.z *= -1
 dLight.target.position.set(0, 0, 0)
-scene.add(dLight, dLight.target)
 
 const pLight = new PointLight(0xffffdd, 5, resolution.x)
 pLight.position.y = 10
-scene.add(pLight)
+
+scene.add(pLight, dLight, dLight.target)
 
 /**
  * Handle resize
@@ -121,6 +118,9 @@ function onResize() {
 	renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 }
 
+/**
+ * Raycaster
+ */
 const raycaster = new Raycaster()
 const coords = new Vector2()
 
@@ -130,13 +130,14 @@ const coords = new Vector2()
 function animate() {
 	requestAnimationFrame(animate)
 
-	camera.rotation.z += 0.0005
+	camera.rotation.z += 0.0002
 
 	raycaster.setFromCamera(cursor, camera)
 
 	const intersects = raycaster.intersectObject(plane)
 
 	let point = intersects[0]?.point
+	console.log(point)
 	if (point) {
 		coords.x = point.x
 		coords.y = point.z
@@ -153,33 +154,36 @@ function animate() {
 
 requestAnimationFrame(animate)
 
-step()
-
-// Cell.cells[index].neighbors.forEach((n) => (n.material.opacity = 0.5))
-
-// console.log(Cell.cells[index].neighbors.length)
-
+/**
+ * Cellular automata lifecycle
+ */
 function step() {
 	const mustDieCell = []
 	const mustBeBornCell = []
 
-	Cell.cells.forEach((c) => {
-		if (c.mustDie) {
-			mustDieCell.push(c.index)
+	Cell.cells.forEach((cell) => {
+		if (cell.mustDie) {
+			mustDieCell.push(cell.index)
 		}
 
-		if (c.mustBeBorn) {
-			mustBeBornCell.push(c.index)
+		if (cell.mustBeBorn) {
+			mustBeBornCell.push(cell.index)
 		}
 	})
 
 	mustDieCell.forEach((i) => Cell.cells[i].die())
 	mustBeBornCell.forEach((i) => Cell.cells[i].born())
+
+	setTimeout(step, speed * 1000)
 }
 
 // window.addEventListener('click', step)
-setInterval(step, speed * 1000)
+step()
 
+/**
+ * Cursor coordinates for raycasting
+ * @param {*} event
+ */
 function onMouseMove(event) {
 	// console.log(event)
 	if ((event.touches || []).length) {
