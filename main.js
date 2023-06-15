@@ -179,8 +179,13 @@ function step() {
 setInterval(step, speed * 1000)
 
 function onMouseMove(event) {
+	console.log(event)
+	if ((event.touches || []).length) {
+		event = event.touches[0]
+	}
 	cursor.x = 2 * (event.clientX / window.innerWidth) - 1
 	cursor.y = -2 * (event.clientY / window.innerHeight) + 1
 }
 
 window.addEventListener('mousemove', onMouseMove)
+window.addEventListener('touchmove', onMouseMove)
